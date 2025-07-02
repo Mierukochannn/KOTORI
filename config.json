@@ -19,16 +19,13 @@
     "Info": "This section manages the bot's automatic package updates. To disable this function, set 'Package' to false. If you only want to exclude specific packages, set them to true and add them in the 'EXCLUDED' list."
   },
   "commandDisabled": [
-    "npx.js",
-    "npx2.js",
-    "npx3.js",
     "npx4.js"
   ],
   "eventDisabled": [],
-  "BOTNAME": "TOHI-BOT",
-  "PREFIX": ">",
+  "BOTNAME": "💬𝘼𝙀𝙎𝙏𝙃𝙀𝙍⊍⊎⊌",
+  "PREFIX": ".",
   "ADMINBOT": [
-    "100092006324917"
+    "100066731134942"
   ],
   "AUTO_APPROVE": {
     "enabled": true,
