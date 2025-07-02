@@ -1,55 +1,62 @@
+const fs = require("fs-extra");
+
 module.exports.config = {
-    name: "prefix",
-    version: "2.0.5",
-    hasPermssion: 0,
-    usePrefix: true,
-    credits: "TOHI-BOT-HUB",
-    description: "Display current prefix info",
-    commandCategory: "config",
-    usages: "",
-    cooldowns: 3,
+  name: "prefix",
+  version: "2.1",
+  hasPermssion: 0,
+  usePrefix: false,
+  credits: "Aesther",
+  description: "🎀 Voir ou changer le préfixe",
+  commandCategory: "config",
+  usages: "[nouveau prefix/reset]",
+  cooldowns: 3
 };
 
-module.exports.run = async ({ api, event, Threads }) => {
-    const { threadID, messageID, body } = event;
+module.exports.run = async ({ api, event, args }) => {
+  const { threadID, senderID, messageID } = event;
+  const threadDataPath = __dirname + "/../dataThreads.json";
 
-    try {
-        // Get global and box prefix
-        const globalPrefix = (global.config.PREFIX || "!").toLowerCase();
-        const threadData = (await Threads.getData(threadID)).data || {};
-        // যদি box prefix override থাকে, তা নাও, না থাকলে globalPrefix
-        const boxPrefix = (threadData.PREFIX || globalPrefix).toLowerCase();
+  // Charger les données thread
+  let threadData = {};
+  if (fs.existsSync(threadDataPath)) {
+    threadData = JSON.parse(fs.readFileSync(threadDataPath));
+  }
 
-        // Input message (trimmed, lowercase)
-        const input = (body || "").trim().toLowerCase();
+  const globalPrefix = global.config.PREFIX || "!";
+  const currentPrefix = threadData[threadID]?.prefix || globalPrefix;
 
-        // Accept if:
-        // - input is just "prefix"
-        // - input is just boxPrefix (e.g. "=")
-        // - input is boxPrefix+"prefix" (e.g. "=prefix")
-        // - (if boxPrefix !== globalPrefix): input is just globalPrefix (e.g. "/") or globalPrefix+"prefix" (e.g. "/prefix")
-        if (
-            input === "prefix" ||
-            input === boxPrefix ||
-            input === (boxPrefix + "prefix") ||
-            (boxPrefix !== globalPrefix && (
-                input === globalPrefix || input === (globalPrefix + "prefix")
-            ))
-        ) {
-            let prefixInfo = `🤖 𝐁𝐨𝐭 𝐍𝐚𝐦𝐞: ${global.config.BOTNAME || "TOHI-BOT"}\n`;
-            prefixInfo += `🌐 𝐆𝐥𝐨𝐛𝐚𝐥 𝐏𝐫𝐞𝐟𝐢𝐱: "${global.config.PREFIX}"\n`;
-            if (boxPrefix !== globalPrefix) {
-                prefixInfo += `🏠 𝐁𝐨𝐱 𝐏𝐫𝐞𝐟𝐢𝐱: "${threadData.PREFIX}"`;
-            } else {
-                prefixInfo += `🏠 𝐁𝐨𝐱 𝐏𝐫𝐞𝐟𝐢𝐱: "${global.config.PREFIX}" (𝐃𝐞𝐟𝐚𝐮𝐥𝐭)`;
-            }
-            return api.sendMessage(prefixInfo, threadID, messageID);
-        }
-        // If none matched, do nothing
-        return;
+  if (!args[0]) {
+    const name = (await api.getUserInfo(senderID))[senderID].name;
 
-    } catch (error) {
-        console.log("Prefix command error:", error);
-        return api.sendMessage("❌ প্রিফিক্স তথ্য লোড করতে সমস্যা হয়েছে।", threadID, messageID);
-    }
+    return api.sendMessage({
+      body: `
+╭─━━━━━ ∘◦ ❀ ◦∘ ━━━━━─╮
+    🌸 𝙄𝙉𝙁𝙊 𝙋𝙍𝙀𝙁𝙄𝙓 🌸
+╰─━━━━━ ∘◦ ❀ ◦∘ ━━━━━─╯
+
+👤 𝙐𝙩𝙞𝙡𝙞𝙨𝙖𝙩𝙚𝙪𝙧 : ${name}
+🛸 𝗚𝗟𝗢𝗕𝗔𝗟 : [ ${globalPrefix} ]
+🏠 𝗦𝗔𝗟𝗢𝗡 : [ ${currentPrefix} ]
+
+📌 Tape « ${currentPrefix}help » pour voir les commandes.
+✦ Créé par 𝗔𝗲𝘀𝘁𝗵𝗲𝗿 ✦`,
+      attachment: await global.utils.getStreamFromURL("https://i.imgur.com/dV0G0Sw.jpeg")
+    }, threadID, messageID);
+  }
+
+  // Réinitialisation
+  if (args[0].toLowerCase() === "reset") {
+    if (threadData[threadID]) delete threadData[threadID].prefix;
+    fs.writeFileSync(threadDataPath, JSON.stringify(threadData, null, 2));
+    return api.sendMessage(`🔁 Préfixe réinitialisé à :『 ${globalPrefix} 』`, threadID, messageID);
+  }
+
+  // Changement de préfixe
+  const newPrefix = args[0];
+
+  if (!threadData[threadID]) threadData[threadID] = {};
+  threadData[threadID].prefix = newPrefix;
+  fs.writeFileSync(threadDataPath, JSON.stringify(threadData, null, 2));
+
+  return api.sendMessage(`✅ Préfixe mis à jour pour ce salon :『 ${newPrefix} 』`, threadID, messageID);
 };
